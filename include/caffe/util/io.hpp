@@ -6,6 +6,7 @@
 #include <google/protobuf/message.h>
 
 #include <string>
+#include <vector>
 
 #include "caffe/blob.hpp"
 #include "caffe/proto/caffe.pb.h"
@@ -44,6 +45,14 @@ bool ReadImageToDatum(const string& filename, const int label,
     const int height, const int width, Datum* datum);
 
 inline bool ReadImageToDatum(const string& filename, const int label,
+    Datum* datum) {
+  return ReadImageToDatum(filename, label, 0, 0, datum);
+}
+
+bool ReadMultiLabelImageToDatum(const string& filename, std::vector<bool> label,
+    const int height, const int width, Datum* datum);
+
+inline bool ReadMultiLabelImageToDatum(const string& filename, std::vector<bool> label,
     Datum* datum) {
   return ReadImageToDatum(filename, label, 0, 0, datum);
 }

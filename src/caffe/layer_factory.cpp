@@ -27,6 +27,9 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new ConvolutionLayer<Dtype>(param);
   } else if (type == "data") {
     return new DataLayer<Dtype>(param);
+  } else if (type == "multilabel_data"){
+    //this is what we need to add to properly get our data not from leveldb, but camera
+    return new MultiLabelDataLayer<Dtype>(param);
   } else if (type == "dropout") {
     return new DropoutLayer<Dtype>(param);
   } else if (type == "euclidean_loss") {
@@ -47,8 +50,6 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new PoolingLayer<Dtype>(param);
   } else if (type == "relu") {
     return new ReLULayer<Dtype>(param);
-  } else if (type == "sigmoid") {
-    return new SigmoidLayer<Dtype>(param);
   } else if (type == "softmax") {
     return new SoftmaxLayer<Dtype>(param);
   } else if (type == "softmax_loss") {

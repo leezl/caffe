@@ -87,6 +87,7 @@ bool ReadImageToDatum(const string& filename, const int label,
   datum->set_label(label);
   datum->clear_data();
   datum->clear_float_data();
+  datum->clear_multi_label();
   string* datum_string = datum->mutable_data();
   for (int c = 0; c < 3; ++c) {
     for (int h = 0; h < cv_img.rows; ++h) {
@@ -135,6 +136,52 @@ void load_2d_dataset<double>(hid_t file_id, const char* dataset_name_,
     array->reset(new double[dims[0] * dims[1]]);
     status = H5LTread_dataset_double(
         file_id, dataset_name_, array->get());
+
+/*
+Following to be combined with HDF5 format reader.
+The following requires a boolean vector of the labels for this sample.
+Which means you must have set that up somewhere else. This just puts it into the datum.
+RECOMMENDATION:
+Use the HDF5 data format and use the above function.
+*/
+bool ReadMultiLabelImageToDatum(const string& filename, std::vector<bool> multilabels,
+    const int height, const int width, Datum* datum, ) {
+  cv::Mat cv_img;
+  if (height > 0 && width > 0) {
+    cv::Mat cv_img_origin = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
+    cv::resize(cv_img_origin, cv_img, cv::Size(height, width));
+  } else {
+    cv_img = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
+  }
+  if (!cv_img.data) {
+    LOG(ERROR) << "Could not open or find file " << filename;
+    return false;
+  }
+  if (height > 0 && width > 0) {
+
+  }
+  datum->set_channels(3);
+  datum->set_height(cv_img.rows);
+  datum->set_width(cv_img.cols);
+  //datum->set_label(label); //multilabel now
+  //clear repeated fields
+  datum->clear_data();
+  datum->clear_float_data();
+  datum->clear_multi_label();
+  string* datum_string = datum->mutable_data();
+  //add data
+  for (int c = 0; c < 3; ++c) {
+    for (int h = 0; h < cv_img.rows; ++h) {
+      for (int w = 0; w < cv_img.cols; ++w) {
+        datum_string->push_back(static_cast<char>(cv_img.at<cv::Vec3b>(h, w)[c]));
+      }
+    }
+  }
+  //add labels //BEWARE C++11 just replace auto if this fails
+    for (auto item = multilabels.begin(); item!=multilabels.end(); ++item) { //yay new for loop type...probably wrong
+        datum->add_multi_label(*item);
+    }
+  return true;
 }
 
 }  // namespace caffe

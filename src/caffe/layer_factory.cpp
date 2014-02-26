@@ -29,6 +29,10 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new DataLayer<Dtype>(param);
   } else if (type == "hdf5_data") {
     return new HDF5DataLayer<Dtype>(param);
+  } else if (type == "multilabel_data"){
+    //assumes a leveldb containing a multilabel data vector
+    //this may be replaced by the above HDF5 layer
+    return new MultiLabelDataLayer<Dtype>(param);
   } else if (type == "dropout") {
     return new DropoutLayer<Dtype>(param);
   } else if (type == "euclidean_loss") {

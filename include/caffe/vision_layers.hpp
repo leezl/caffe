@@ -65,25 +65,6 @@ class TanHLayer : public NeuronLayer<Dtype> {
 };
 
 template <typename Dtype>
-class SigmoidLayer : public NeuronLayer<Dtype> {
- public:
-  explicit SigmoidLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
-
- protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top);
-
-  virtual Dtype Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const bool propagate_down, vector<Blob<Dtype>*>* bottom);
-  virtual Dtype Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const bool propagate_down, vector<Blob<Dtype>*>* bottom);
-};
-
-
-template <typename Dtype>
 class BNLLLayer : public NeuronLayer<Dtype> {
  public:
   explicit BNLLLayer(const LayerParameter& param)
@@ -317,6 +298,7 @@ class ConvolutionLayer : public Layer<Dtype> {
 // This function is used to create a pthread that prefetches the data.
 template <typename Dtype>
 void* DataLayerPrefetch(void* layer_pointer);
+//can we avoid this? here's where our lag comes in: read from camera, grab patches
 
 template <typename Dtype>
 class DataLayer : public Layer<Dtype> {
@@ -326,7 +308,6 @@ class DataLayer : public Layer<Dtype> {
  public:
   explicit DataLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual ~DataLayer();
   virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
@@ -352,6 +333,44 @@ class DataLayer : public Layer<Dtype> {
   Blob<Dtype> data_mean_;
 };
 
+// This function is used to create a pthread that prefetches the data.
+template <typename Dtype>
+void* MultiLabelDataLayerPrefetch(void* layer_pointer);
+//can we avoid this? here's where our lag comes in: read from camera, grab patches
+
+template <typename Dtype>
+class MultiLabelDataLayer : public Layer<Dtype> {
+  // The function used to perform prefetching.
+  friend void* MultiLabelDataLayerPrefetch<Dtype>(void* layer_pointer);
+
+ public:
+  explicit MultiLabelDataLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual Dtype Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const bool propagate_down, vector<Blob<Dtype>*>* bottom);
+  virtual Dtype Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const bool propagate_down, vector<Blob<Dtype>*>* bottom);
+
+  shared_ptr<leveldb::DB> db_;
+  shared_ptr<leveldb::Iterator> iter_;
+  int datum_channels_;
+  int datum_height_;
+  int datum_width_;
+  int datum_size_;
+  int datum_label_size_;
+  pthread_t thread_;
+  shared_ptr<Blob<Dtype> > prefetch_data_;
+  shared_ptr<Blob<Dtype> > prefetch_label_;
+  Blob<Dtype> data_mean_;
+};
 
 template <typename Dtype>
 class HDF5DataLayer : public Layer<Dtype> {
@@ -403,7 +422,6 @@ class SoftmaxLayer : public Layer<Dtype> {
   // scale is an intermediate blob to hold temporary results.
   Blob<Dtype> scale_;
 };
-
 
 template <typename Dtype>
 class MultinomialLogisticLossLayer : public Layer<Dtype> {
@@ -480,7 +498,6 @@ class SoftmaxWithLossLayer : public Layer<Dtype> {
   vector<Blob<Dtype>*> softmax_bottom_vec_;
   vector<Blob<Dtype>*> softmax_top_vec_;
 };
-
 
 template <typename Dtype>
 class EuclideanLossLayer : public Layer<Dtype> {

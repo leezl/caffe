@@ -4,6 +4,7 @@
 #define CAFFE_UTIL_IO_H_
 
 #include <string>
+#include <vector>
 
 #include "google/protobuf/message.h"
 #include "hdf5.h"
@@ -55,6 +56,16 @@ template <typename Dtype>
 void load_2d_dataset(
   hid_t file_id, const char* dataset_name_,
   boost::scoped_ptr<Dtype>* array, hsize_t* dims);
+
+//following likely to be replaced/ updated to use HDF5 format instead
+//these assume that a leveldb will be created to hold the data, which is stored separately.
+bool ReadMultiLabelImageToDatum(const string& filename, std::vector<bool> label,
+    const int height, const int width, Datum* datum);
+
+inline bool ReadMultiLabelImageToDatum(const string& filename, std::vector<bool> label,
+    Datum* datum) {
+  return ReadImageToDatum(filename, label, 0, 0, datum);
+}
 
 }  // namespace caffe
 
